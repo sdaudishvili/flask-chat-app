@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Socket.IO chat</title>
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z"
+      crossorigin="anonymous"
+    />
+    <style>
+      #chat-app {
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+      }
+      ul {
+        margin: 0;
+        padding: 0;
+        list-style-type: none;
+      }
+      ul li {
+        margin-bottom: 5px;
+      }
+      ul li .message {
+        border: 1px solid rgba(0, 0, 0, 0.125);
+        border-radius: 15px;
+        padding: 5px 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app" class="container">
+      <div v-if="user.isAuthorized" id="chat-app" class="container d-flex">
+        <div class="d-flex flex-column h-100 flex-grow-1">
+          <div class="card flex-grow-1 overflow-auto">
+            <ul class="card-body d-flex flex-column">
+              <li
+                :class="{ 'justify-content-end' : e.username !== user.username}"
+                class="d-flex align-items-center"
+                v-for="(e,i) in messages"
+                :key="i"
+              >
+                <div :class="{ 'order-1' : e.username !== user.username}">
+                  [[e.username]]
+                </div>
+                <div
+                  :class="{ 'order-0' : e.username !== user.username}"
+                  class="message ml-3 mr-3"
+                >
+                  [[e.message]]
+                </div>
+              </li>
+            </ul>
+          </div>
+          <div class="relative" style="height: 40px">
+            <div class="mt-3" v-if="usersTyping.length > 0">
+              [[usersTyping.join(', ')]] Typing...
+            </div>
+          </div>
+          <form @submit="submit">
+            <div class="input-group container mb-3 mt-3">
+              <input
+                type="text"
+                class="form-control"
+                placeholder="Message"
+                :value="message"
+                @input="inputHandler"
+              />
+              <div class="input-group-append">
+                <button class="btn btn-outline-secondary">Send</button>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div style="min-width: 200px" class="ml-3">
+          <ul class="list-group">
+            <li class="list-group-item">
+              Connected users ([[usersConnected.length]])
+            </li>
+            <li
+              v-for="(e,i) in usersConnected"
+              :key="i"
+              class="list-group-item"
+            >
+              [[e]]
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div v-else id="login">
+        <form @submit="handleLogin" class="input-group mb-3 mt-3">
+          <input
+            type="text"
+            class="form-control"
+            placeholder="username"
+            v-model="user.username"
+          />
+          <div class="input-group-append">
+            <button class="btn btn-outline-secondary" type="submit">
+              Login
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.1.1/socket.io.min.js"></script>
+    <script>
+      var socket = null;
+
+      var app = new Vue({
+        el: "#app",
+        delimiters: ["[[", "]]"],
+        data: {
+          user: { username: "", isAuthorized: false },
+          usersTyping: [],
+          usersConnected: [],
+          message: "",
+          messages: [],
+        },
+        methods: {
+          inputHandler(e) {
+            this.message = e.target.value;
+            socket.emit("user_typing", {
+              username: this.user.username,
+              msg: this.message,
+            });
+          },
+          submit(e) {
+            e.preventDefault();
+            if (this.message) {
+              socket.emit("user_message", {
+                username: this.user.username,
+                message: this.message,
+              });
+              this.message = "";
+            }
+          },
+          handleLogin() {
+            if (this.user.username) this.user.isAuthorized = true;
+            this.initSocket();
+          },
+          initSocket() {
+            socket = io({ query: `username=${this.user.username}` });
+            socket.on("users_connection_changed", (users) => {
+              this.usersConnected = [...users];
+            });
+            socket.on("user_message", (msg) => this.messages.push(msg));
+            socket.on("user_typing", (usersTyping) => {
+              console.log(usersTyping);
+              this.usersTyping = [...usersTyping];
+            });
+          },
+        },
+      });
+    </script>
+  </body>
+</html>
