@@ -1,1 +1,1 @@
-web: gunicorn -k flask-chat-appp:app
+web: gunicorn -k app:app
