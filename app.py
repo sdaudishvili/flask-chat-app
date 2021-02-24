@@ -2,7 +2,7 @@ from flask import Flask, render_template, request
 from flask_socketio import SocketIO
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'mysecretkey'
+app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 
@@ -13,6 +13,8 @@ usersTyping = []
 @app.route('/')
 def sessions():
     return render_template('index.html')
+
+    
 
 
 @socketio.on('connect')
@@ -33,6 +35,7 @@ def handleUserMessage(msg, methods=['GET', 'POST']):
 
 @socketio.on('disconnect')
 def handleUserDisconnect(methods=['GET', 'POST']):
+    print('--------------------------------------------------------------------')
     global users, usersTyping
     def filterFn(x): return x.get('sid') != request.sid
     users = list(filter(filterFn, users))
@@ -43,6 +46,7 @@ def handleUserDisconnect(methods=['GET', 'POST']):
 
 @socketio.on('user_typing')
 def handleUserTyping(data, methods=['GET', 'POST']):
+    print('asdf')
     curUserDict = {"username": data.get('username'), "sid": request.sid}
     if data.get('msg') != '':
         if not curUserDict in usersTyping:
@@ -59,4 +63,4 @@ def getUsernamesList(usersList):
 
 
 if __name__ == '__main__':
-    socketio.run(app)
+    socketio.run(app, debug=True)

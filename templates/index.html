@@ -139,16 +139,21 @@
               this.message = "";
             }
           },
-          handleLogin() {
-            if (this.user.username) this.user.isAuthorized = true;
-            this.initSocket();
+          handleLogin(e) {
+            e.preventDefault();
+            if (this.user.username) {
+              this.user.isAuthorized = true;
+              this.initSocket();
+            }
           },
           initSocket() {
             socket = io({ query: `username=${this.user.username}` });
             socket.on("users_connection_changed", (users) => {
               this.usersConnected = [...users];
             });
-            socket.on("user_message", (msg) => this.messages.push(msg));
+            socket.on("user_message", (msg) => {
+              this.messages.push(msg);
+            });
             socket.on("user_typing", (usersTyping) => {
               console.log(usersTyping);
               this.usersTyping = [...usersTyping];
