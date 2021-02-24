@@ -1,9 +1,12 @@
 from flask import Flask, render_template, request
 from flask_socketio import SocketIO
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 app.config['SECRET_KEY'] = 'mysecretkey'
-socketio = SocketIO(app, cors_allowed_origins="*")
+socketio = SocketIO(app)
+
 
 users = []
 usersTyping = []
